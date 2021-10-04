@@ -354,15 +354,19 @@ const buildNode = (localFiles, row, cleanedKey, raw, mapping, createNodeId) => {
       },
     };
   } else {
+    let replaceRaw;
+    if (typeof raw === "string") {
+      replaceRaw = unescapeMarkdownSyntax(raw);
+    }
     return {
       id: createNodeId(`AirtableField_${row.id}_${cleanedKey}`),
       parent: createNodeId(`Airtable_${row.id}`),
       children: [],
-      raw: raw,
+      raw: replaceRaw,
       internal: {
         type: `AirtableField${row.separateMapType ? cleanType(mapping) : ""}`,
         mediaType: mapping,
-        content: typeof raw === "string" ? raw : JSON.stringify(raw),
+        content: typeof replaceRaw === "string" ? replaceRaw : JSON.stringify(replaceRaw),
         contentDigest: crypto
           .createHash("md5")
           .update(JSON.stringify(row))
@@ -371,6 +375,13 @@ const buildNode = (localFiles, row, cleanedKey, raw, mapping, createNodeId) => {
     };
   }
 };
+
+// The markdown text from airtable is escaped with backslash.
+// For some syntax like image, they cannot be converted by remark plugin
+// Unescape // to make these syntax digestable
+const unescapeMarkdownSyntax = (raw) => {
+  return raw.replace(/\\/g, '');
+}
 
 const cleanKey = (key, data) => {
   return key.replace(/ /g, "_");
